@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AuthPermissions</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root{--bg:#0e0f14;--bg2:#161820;--bg3:#1e2029;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);--text:#eef0f6;--text2:#8b8fa8;--text3:#4e5168;--accent:#4f8ef7;--accent2:#3a6fd8;--green:#3ecf8e;--green-bg:rgba(62,207,142,0.10);--green-border:rgba(62,207,142,0.25);--red:#f76f6f;--red-bg:rgba(247,111,111,0.10);--red-border:rgba(247,111,111,0.25);--amber:#f0a742;--amber-bg:rgba(240,167,66,0.10);--purple:#a78bfa;--purple-bg:rgba(167,139,250,0.10);--teal:#34d2c8;--teal-bg:rgba(52,210,200,0.10);--pink:#f472b6;--pink-bg:rgba(244,114,182,0.10);--mono:'IBM Plex Mono',monospace;--sans:'DM Sans',sans-serif;--radius:10px;--radius-lg:14px}
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:2rem 1rem 4rem}
+  .app{width:100%;max-width:520px}
+  .app-header{display:flex;align-items:center;gap:10px;margin-bottom:2rem}
+  .logo-box{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#4f8ef7,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:17px}
+  .app-title{font-family:var(--mono);font-size:14px;font-weight:500;letter-spacing:.03em}
+  .app-sub{font-size:12px;color:var(--text3);margin-top:1px}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+  .tabs{display:flex;border-bottom:1px solid var(--border)}
+  .tab{flex:1;padding:14px 16px;background:transparent;border:none;font-family:var(--sans);font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s,border-color .15s}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .form-body{padding:1.5rem}
+  .alert{padding:10px 14px;border-radius:var(--radius);font-size:13px;margin-bottom:1.25rem;display:none}
+  .alert.error{background:var(--red-bg);border:1px solid var(--red-border);color:var(--red);display:block}
+  .alert.success{background:var(--green-bg);border:1px solid var(--green-border);color:var(--green);display:block}
+  .field{margin-bottom:1rem}
+  .field label{display:block;font-size:12px;font-family:var(--mono);color:var(--text2);margin-bottom:6px;letter-spacing:.02em}
+  .field input{width:100%;padding:9px 13px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);font-family:var(--sans);font-size:14px;color:var(--text);outline:none;transition:border-color .15s}
+  .field input:focus{border-color:var(--border2)}
+  .field input::placeholder{color:var(--text3)}
+  .perm-label{font-size:12px;font-family:var(--mono);color:var(--text2);letter-spacing:.02em;margin-bottom:10px;display:block}
+  .perm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.25rem}
+  .perm-item{padding:10px 10px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:border-color .15s,background .15s;user-select:none;text-align:center}
+  .perm-item:hover{border-color:var(--border2);background:var(--bg)}
+  .perm-item.on{border-color:var(--accent);background:rgba(79,142,247,0.08)}
+  .perm-item .perm-icon{font-size:18px;margin-bottom:5px;display:block}
+  .perm-item .perm-name{font-size:11px;font-family:var(--mono);font-weight:500;color:var(--text2);transition:color .15s}
+  .perm-item.on .perm-name{color:var(--accent)}
+  .auditor-row{display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;user-select:none}
+  .auditor-row.on{border-color:var(--purple);background:var(--purple-bg)}
+  .auditor-check{width:16px;height:16px;border-radius:4px;border:1px solid var(--border2);background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;transition:all .15s}
+  .auditor-row.on .auditor-check{background:var(--purple);border-color:var(--purple);color:#fff}
+  .btn-primary{width:100%;padding:11px;background:var(--accent);border:none;border-radius:var(--radius);font-family:var(--sans);font-size:14px;font-weight:600;color:#fff;cursor:pointer;transition:background .15s,transform .1s}
+  .btn-primary:hover{background:var(--accent2)}
+  .btn-primary:active{transform:scale(.98)}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed}
+  .users-hint{font-size:11px;color:var(--text3);font-family:var(--mono);margin:1.25rem 0 8px}
+  .users-list{display:flex;flex-direction:column;gap:6px}
+  .user-row{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);font-size:13px}
+  .uavatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;font-family:var(--mono);flex-shrink:0}
+  .c0{background:rgba(79,142,247,.2);color:var(--accent)}
+  .c1{background:rgba(62,207,142,.2);color:var(--green)}
+  .c2{background:rgba(167,139,250,.2);color:var(--purple)}
+  .c3{background:rgba(244,114,182,.2);color:var(--pink)}
+  .uname{flex:1;font-size:13px}
+  .uemail{font-size:11px;color:var(--text3);font-family:var(--mono)}
+  .badges{display:flex;flex-wrap:wrap;gap:3px}
+  .badge{font-size:10px;font-family:var(--mono);padding:2px 6px;border-radius:4px;font-weight:500}
+  .badge-read{background:var(--teal-bg);color:var(--teal)}
+  .badge-write{background:rgba(79,142,247,.15);color:var(--accent)}
+  .badge-update{background:var(--amber-bg);color:var(--amber)}
+  .badge-delete{background:var(--red-bg);color:var(--red)}
+  .badge-export{background:var(--pink-bg);color:var(--pink)}
+  .badge-admin{background:var(--purple-bg);color:var(--purple)}
+  #screen-dashboard{display:none}
+  .dash-header{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem 1.5rem;display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+  .dash-user{display:flex;align-items:center;gap:12px}
+  .dash-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:14px;font-weight:600}
+  .dash-name{font-weight:600;font-size:15px}
+  .dash-email{font-size:12px;color:var(--text2);font-family:var(--mono);margin-top:2px}
+  .dash-meta{display:flex;align-items:center;gap:8px}
+  .btn-logout{padding:7px 14px;background:transparent;border:1px solid var(--border2);border-radius:var(--radius);font-family:var(--sans);font-size:12px;color:var(--text2);cursor:pointer;transition:color .15s,border-color .15s}
+  .btn-logout:hover{color:var(--text);border-color:var(--text3)}
+  .pill-auditor{font-size:10px;font-family:var(--mono);padding:3px 8px;border-radius:20px;background:var(--purple-bg);color:var(--purple);border:1px solid rgba(167,139,250,.3)}
+  .jwt-toggle-btn{background:transparent;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-family:var(--mono);font-size:11px;color:var(--text2);cursor:pointer;transition:border-color .15s,color .15s;margin-bottom:.75rem}
+  .jwt-toggle-btn:hover{color:var(--accent);border-color:var(--accent)}
+  .jwt-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;font-family:var(--mono);font-size:11px;color:var(--text3);word-break:break-all;line-height:1.6;margin-bottom:.75rem;display:none}
+  .jwt-header{color:var(--red)}
+  .jwt-payload{color:var(--green)}
+  .jwt-sig{color:var(--purple)}
+  .jwt-legend{display:flex;gap:12px;font-size:10px;font-family:var(--mono);margin-top:6px}
+  .jl{display:flex;align-items:center;gap:4px}
+  .jl::before{content:'';width:8px;height:8px;border-radius:50%;display:inline-block}
+  .jl.h::before{background:var(--red)}.jl.h{color:var(--red)}
+  .jl.p::before{background:var(--green)}.jl.p{color:var(--green)}
+  .jl.s::before{background:var(--purple)}.jl.s{color:var(--purple)}
+  .section-title{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
+  .action-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem}
+  .action-btn{padding:14px 12px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;text-align:left;transition:border-color .15s,transform .1s,background .15s;position:relative}
+  .action-btn:hover{background:var(--bg3)}
+  .action-btn:active{transform:scale(.97)}
+  .action-btn.allowed{border-color:var(--green-border)}
+  .action-btn.denied{border-color:var(--red-border);opacity:.55}
+  .action-btn.denied:hover{opacity:.75}
+  .action-icon{font-size:20px;margin-bottom:8px;display:block}
+  .action-name{font-size:12px;font-family:var(--mono);font-weight:500;display:block}
+  .action-btn.allowed .action-name{color:var(--green)}
+  .action-btn.denied .action-name{color:var(--red)}
+  .action-desc{font-size:11px;color:var(--text3);margin-top:3px;display:block}
+  .action-status{position:absolute;top:10px;right:10px;font-size:11px;font-family:var(--mono)}
+  .action-btn.allowed .action-status{color:var(--green)}
+  .action-btn.denied .action-status{color:var(--red)}
+  .log-list{display:flex;flex-direction:column;gap:6px}
+  .log-empty{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;text-align:center;font-size:13px;color:var(--text3);font-family:var(--mono)}
+  .log-item{padding:10px 14px;border-radius:var(--radius);display:flex;align-items:flex-start;gap:10px;border:1px solid;animation:slideIn .2s ease}
+  @keyframes slideIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .log-item.ok{background:var(--green-bg);border-color:var(--green-border)}
+  .log-item.nok{background:var(--red-bg);border-color:var(--red-border)}
+  .log-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+  .log-item.ok .log-icon{color:var(--green)}
+  .log-item.nok .log-icon{color:var(--red)}
+  .log-body{flex:1;font-size:13px;line-height:1.5}
+  .log-action{font-family:var(--mono);font-size:12px;font-weight:500}
+  .log-item.ok .log-action{color:var(--green)}
+  .log-item.nok .log-action{color:var(--red)}
+  .chain-pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:20px;background:var(--amber-bg);color:var(--amber);border:1px solid rgba(240,167,66,.25);margin-top:5px}
+  .chain-pill.confirmed{background:var(--green-bg);color:var(--green);border-color:var(--green-border)}
+  .log-time{font-size:11px;color:var(--text3);font-family:var(--mono);flex-shrink:0}
+  .sep{height:1px;background:var(--border);margin:1.25rem 0}
+  .api-status{display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:1rem}
+  .dot{width:7px;height:7px;border-radius:50%}
+  .dot.online{background:var(--green)}
+  .dot.offline{background:var(--red)}
+  .dot.checking{background:var(--amber);animation:pulse .8s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-left:6px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="app-header">
+    <div class="logo-box">🔐</div>
+    <div>
+      <div class="app-title">auth_permissions</div>
+      <div class="app-sub">flask · jwt · polygon amoy</div>
+    </div>
+  </div>
+
+  <!-- API Status -->
+  <div class="api-status">
+    <div class="dot checking" id="api-dot"></div>
+    <span id="api-label">verificando conexão com a API...</span>
+  </div>
+
+  <!-- AUTH -->
+  <div id="screen-auth">
+    <div class="card">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('login')">entrar</button>
+        <button class="tab" onclick="switchTab('register')">cadastrar usuário</button>
+      </div>
+
+      <div id="tab-login" class="form-body">
+        <div id="login-alert" class="alert"></div>
+        <div class="field"><label>e-mail</label><input id="login-email" type="email" placeholder="seu@email.com"/></div>
+        <div class="field"><label>senha</label><input id="login-pass" type="password" placeholder="••••••••"/></div>
+        <button class="btn-primary" id="btn-login" onclick="doLogin()">→ entrar</button>
+        <div class="sep"></div>
+        <div class="users-hint"># usuários cadastrados:</div>
+        <div class="users-list" id="users-preview"></div>
+      </div>
+
+      <div id="tab-register" class="form-body" style="display:none">
+        <div id="reg-alert" class="alert"></div>
+        <div class="field"><label>nome completo</label><input id="reg-name" type="text" placeholder="João da Silva"/></div>
+        <div class="field"><label>e-mail</label><input id="reg-email" type="email" placeholder="joao@email.com"/></div>
+        <div class="field"><label>senha</label><input id="reg-pass" type="password" placeholder="mínimo 6 caracteres"/></div>
+        <span class="perm-label"># selecione as permissões</span>
+        <div class="perm-grid" id="perm-grid"></div>
+        <div class="auditor-row" id="auditor-row" onclick="toggleAuditor()">
+          <div class="auditor-check" id="auditor-check"></div>
+          <div>
+            <div style="font-size:13px;font-weight:500">Auditor</div>
+            <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">pode consultar violações na blockchain</div>
+          </div>
+        </div>
+        <button class="btn-primary" id="btn-register" onclick="doRegister()">+ cadastrar usuário</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="screen-dashboard">
+    <div class="dash-header">
+      <div class="dash-user">
+        <div class="dash-avatar" id="dash-avatar">JD</div>
+        <div>
+          <div class="dash-name" id="dash-name">João</div>
+          <div class="dash-email" id="dash-email">joao@email.com</div>
+        </div>
+      </div>
+      <div class="dash-meta">
+        <span class="pill-auditor" id="auditor-pill" style="display:none">auditor</span>
+        <button class="btn-logout" onclick="doLogout()">← sair</button>
+      </div>
+    </div>
+
+    <button class="jwt-toggle-btn" onclick="toggleJWT()">🔑 JWT token</button>
+    <div class="jwt-box" id="jwt-box"></div>
+
+    <div class="section-title">ações disponíveis</div>
+    <div class="action-grid" id="action-grid"></div>
+
+    <div class="sep"></div>
+    <div class="section-title">log de eventos</div>
+    <div class="log-list" id="event-log">
+      <div class="log-empty">// nenhuma ação registrada</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const API = 'http://localhost:5000/api';
+
+  const PERMS = [
+    {id:'read',   label:'Read',   icon:'👁', desc:'visualizar dados'},
+    {id:'write',  label:'Write',  icon:'✏️', desc:'criar registros'},
+    {id:'update', label:'Update', icon:'🔄', desc:'editar registros'},
+    {id:'delete', label:'Delete', icon:'🗑', desc:'remover dados'},
+    {id:'export', label:'Export', icon:'📤', desc:'exportar arquivos'},
+    {id:'admin',  label:'Admin',  icon:'⚙️', desc:'painel admin'},
+  ];
+
+  let selectedPerms = [];
+  let isAuditor     = false;
+  let currentUser   = null;
+  let currentToken  = null;
+  let eventLog      = [];
+
+  // ── API health check ──────────────────────────────────────────────────────
+  async function checkAPI(){
+    try{
+      const r = await fetch(`${API}/health`);
+      const d = await r.json();
+      document.getElementById('api-dot').className   = 'dot online';
+      document.getElementById('api-label').textContent =
+        `API online ${d.blockchain ? '· blockchain conectada ⛓' : '· blockchain não configurada'}`;
+      loadUsers();
+    } catch {
+      document.getElementById('api-dot').className   = 'dot offline';
+      document.getElementById('api-label').textContent = 'API offline — inicie: python app.py';
+    }
+  }
+
+  async function loadUsers(){
+    // mostra usuários apenas como demonstração — endpoint público no MVP
+    // em produção remova ou proteja com auditor
+    try{
+      const r = await fetch(`${API}/users`, {headers:{'Authorization':'Bearer '+currentToken}});
+      if(!r.ok) return;
+      const d = await r.json();
+      renderUsersPreview(d.users);
+    } catch {}
+  }
+
+  // ── Tab ───────────────────────────────────────────────────────────────────
+  function switchTab(tab){
+    document.querySelectorAll('.tab').forEach((t,i)=>
+      t.classList.toggle('active',(tab==='login'&&i===0)||(tab==='register'&&i===1)));
+    document.getElementById('tab-login').style.display    = tab==='login'    ? 'block':'none';
+    document.getElementById('tab-register').style.display = tab==='register' ? 'block':'none';
+    if(tab==='register'){selectedPerms=[];isAuditor=false;renderPermGrid();}
+    ['login-alert','reg-alert'].forEach(id=>{document.getElementById(id).className='alert';});
+  }
+
+  // ── Perm grid ─────────────────────────────────────────────────────────────
+  function renderPermGrid(){
+    document.getElementById('perm-grid').innerHTML = PERMS.map(p=>`
+      <div class="perm-item${selectedPerms.includes(p.id)?' on':''}" onclick="togglePerm('${p.id}',this)">
+        <span class="perm-icon">${p.icon}</span>
+        <span class="perm-name">${p.label}</span>
+      </div>`).join('');
+    document.getElementById('auditor-row').className  = 'auditor-row'+(isAuditor?' on':'');
+    document.getElementById('auditor-check').textContent = isAuditor?'✓':'';
+  }
+  function togglePerm(id,el){
+    if(selectedPerms.includes(id)) selectedPerms=selectedPerms.filter(x=>x!==id);
+    else selectedPerms.push(id);
+    el.classList.toggle('on',selectedPerms.includes(id));
+  }
+  function toggleAuditor(){
+    isAuditor=!isAuditor;
+    document.getElementById('auditor-row').className='auditor-row'+(isAuditor?' on':'');
+    document.getElementById('auditor-check').textContent=isAuditor?'✓':'';
+  }
+
+  // ── Users preview ─────────────────────────────────────────────────────────
+  const colors=['c0','c1','c2','c3'];
+  function initials(n){return n.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();}
+  function renderUsersPreview(users){
+    const c=document.getElementById('users-preview');
+    if(!users||!users.length){c.innerHTML='<div style="font-size:12px;color:var(--text3);font-family:var(--mono)">// nenhum usuário ainda</div>';return;}
+    c.innerHTML=users.map((u,i)=>`
+      <div class="user-row">
+        <div class="uavatar ${colors[i%4]}">${initials(u.name)}</div>
+        <div style="flex:1;min-width:0">
+          <div class="uname">${u.name}${u.is_auditor?' <span class="pill-auditor" style="font-size:9px">auditor</span>':''}</div>
+          <div class="uemail">${u.email}</div>
+        </div>
+        <div class="badges">${(u.permissions||[]).map(p=>`<span class="badge badge-${p}">${p}</span>`).join('')}</div>
+      </div>`).join('');
+  }
+
+  // ── Login ─────────────────────────────────────────────────────────────────
+  async function doLogin(){
+    const email=document.getElementById('login-email').value.trim();
+    const pass =document.getElementById('login-pass').value;
+    const alrt =document.getElementById('login-alert');
+    const btn  =document.getElementById('btn-login');
+    alrt.className='alert';
+    if(!email||!pass){alrt.className='alert error';alrt.textContent='⚠ preencha todos os campos.';return;}
+    btn.disabled=true; btn.innerHTML='entrando<span class="spinner"></span>';
+    try{
+      const r=await fetch(`${API}/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass})});
+      const d=await r.json();
+      if(!r.ok){alrt.className='alert error';alrt.textContent='⚠ '+d.error;return;}
+      currentToken=d.token; currentUser=d.user; eventLog=[];
+      showDashboard();
+    } catch {
+      alrt.className='alert error';alrt.textContent='⚠ Erro ao conectar na API. Verifique se o Flask está rodando.';
+    } finally {btn.disabled=false;btn.innerHTML='→ entrar';}
+  }
+
+  // ── Register ──────────────────────────────────────────────────────────────
+  async function doRegister(){
+    const name =document.getElementById('reg-name').value.trim();
+    const email=document.getElementById('reg-email').value.trim().toLowerCase();
+    const pass =document.getElementById('reg-pass').value;
+    const alrt =document.getElementById('reg-alert');
+    const btn  =document.getElementById('btn-register');
+    alrt.className='alert';
+    if(!name||!email||!pass){alrt.className='alert error';alrt.textContent='⚠ preencha todos os campos.';return;}
+    if(pass.length<6){alrt.className='alert error';alrt.textContent='⚠ senha com mínimo 6 caracteres.';return;}
+    if(!selectedPerms.length){alrt.className='alert error';alrt.textContent='⚠ selecione ao menos uma permissão.';return;}
+    btn.disabled=true;btn.innerHTML='cadastrando<span class="spinner"></span>';
+    try{
+      const r=await fetch(`${API}/auth/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password:pass,permissions:selectedPerms,is_auditor:isAuditor})});
+      const d=await r.json();
+      if(!r.ok){alrt.className='alert error';alrt.textContent='⚠ '+d.error;return;}
+      alrt.className='alert success';
+      alrt.textContent=`✓ "${name}" cadastrado! Perms: ${selectedPerms.join(', ')}${isAuditor?' | auditor':''}`;
+      document.getElementById('reg-name').value='';
+      document.getElementById('reg-email').value='';
+      document.getElementById('reg-pass').value='';
+      selectedPerms=[];isAuditor=false;
+      renderPermGrid();
+      setTimeout(()=>switchTab('login'),1800);
+    } catch {
+      alrt.className='alert error';alrt.textContent='⚠ Erro ao conectar na API.';
+    } finally {btn.disabled=false;btn.innerHTML='+ cadastrar usuário';}
+  }
+
+  // ── Dashboard ─────────────────────────────────────────────────────────────
+  function showDashboard(){
+    document.getElementById('screen-auth').style.display='none';
+    document.getElementById('screen-dashboard').style.display='block';
+    const idx=Math.abs(currentUser.id%4);
+    const av=document.getElementById('dash-avatar');
+    av.textContent=initials(currentUser.name);
+    av.className=`dash-avatar uavatar ${colors[idx]}`;
+    document.getElementById('dash-name').textContent =currentUser.name;
+    document.getElementById('dash-email').textContent=currentUser.email;
+    document.getElementById('auditor-pill').style.display=currentUser.is_auditor?'inline-flex':'none';
+    renderJWT();renderActions();renderLog();
+  }
+
+  // ── JWT ───────────────────────────────────────────────────────────────────
+  function renderJWT(){
+    const parts=currentToken.split('.');
+    document.getElementById('jwt-box').innerHTML=
+      `<span class="jwt-header">${parts[0]}</span><span style="color:var(--text3)">.</span>`+
+      `<span class="jwt-payload">${parts[1]}</span><span style="color:var(--text3)">.</span>`+
+      `<span class="jwt-sig">${parts[2]}</span>`+
+      `<div class="jwt-legend"><span class="jl h">header</span><span class="jl p">payload</span><span class="jl s">signature</span></div>`;
+  }
+  function toggleJWT(){
+    const b=document.getElementById('jwt-box');
+    b.style.display=b.style.display==='block'?'none':'block';
+  }
+
+  // ── Actions ───────────────────────────────────────────────────────────────
+  function renderActions(){
+    document.getElementById('action-grid').innerHTML=PERMS.map(p=>{
+      const ok=currentUser.permissions.includes(p.id);
+      return `<button class="action-btn ${ok?'allowed':'denied'}" onclick="doAction('${p.id}','${p.label}',${ok})">
+        <span class="action-status">${ok?'✓':'✕'}</span>
+        <span class="action-icon">${p.icon}</span>
+        <span class="action-name">${p.label}</span>
+        <span class="action-desc">${p.desc}</span>
+      </button>`;
+    }).join('');
+  }
+
+  // ── Action click ──────────────────────────────────────────────────────────
+  async function doAction(permId,permLabel,allowed){
+    const ts=new Date().toLocaleTimeString('pt-BR');
+    // Ação permitida — só loga localmente
+    if(allowed){
+      eventLog.unshift({permId,permLabel,allowed:true,ts,txHash:null,sending:false});
+      renderLog(); return;
+    }
+    // Ação negada — envia para o Flask → blockchain
+    const idx=eventLog.unshift({permId,permLabel,allowed:false,ts,txHash:null,sending:true})-1;
+    renderLog();
+    try{
+      const r=await fetch(`${API}/violation`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+currentToken},
+        body:JSON.stringify({action:permId})
+      });
+      const d=await r.json();
+      eventLog[0].sending=false;
+      eventLog[0].txHash=d.tx_hash||null;
+      eventLog[0].blockNumber=d.block_number||null;
+    } catch {
+      eventLog[0].sending=false;
+      eventLog[0].error='Falha na API';
+    }
+    renderLog();
+  }
+
+  // ── Log ───────────────────────────────────────────────────────────────────
+  function renderLog(){
+    const c=document.getElementById('event-log');
+    if(!eventLog.length){c.innerHTML='<div class="log-empty">// nenhuma ação registrada</div>';return;}
+    c.innerHTML=eventLog.map(e=>`
+      <div class="log-item ${e.allowed?'ok':'nok'}">
+        <span class="log-icon">${e.allowed?'✓':e.sending?'⏳':'✕'}</span>
+        <div class="log-body">
+          <span style="font-weight:600">${currentUser.name}</span>
+          ${e.allowed?'executou':'tentou executar'}
+          <span class="log-action"> ${e.permLabel}</span>
+          ${e.allowed
+            ?'<span style="color:var(--green);font-size:12px"> — autorizado</span>'
+            :e.sending
+              ?'<br><span class="chain-pill">⛓ enviando para blockchain...</span>'
+              :e.txHash
+                ?`<br><span class="chain-pill confirmed">⛓ gravado · bloco ${e.blockNumber}</span><br><span style="font-family:var(--mono);font-size:10px;color:var(--text3)">tx: ${e.txHash.slice(0,20)}...</span>`
+                :`<br><span class="chain-pill">⛓ ${e.error||'blockchain não configurada'}</span>`
+          }
+        </div>
+        <span class="log-time">${e.ts}</span>
+      </div>`).join('');
+  }
+
+  // ── Logout ────────────────────────────────────────────────────────────────
+  function doLogout(){
+    currentUser=null;currentToken=null;eventLog=[];
+    document.getElementById('screen-dashboard').style.display='none';
+    document.getElementById('screen-auth').style.display='block';
+    document.getElementById('jwt-box').style.display='none';
+    document.getElementById('login-email').value='';
+    document.getElementById('login-pass').value='';
+    switchTab('login');
+    checkAPI();
+  }
+
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Enter')return;
+    if(document.getElementById('tab-login').style.display!=='none') doLogin();
+    else doRegister();
+  });
+
+  checkAPI();
+</script>
+</body>
+</html>

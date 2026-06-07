@@ -117,6 +117,21 @@
   .chain-pill.confirmed{background:var(--green-bg);color:var(--green);border-color:var(--green-border)}
   .log-time{font-size:11px;color:var(--text3);font-family:var(--mono);flex-shrink:0}
   .sep{height:1px;background:var(--border);margin:1.25rem 0}
+  .audit-panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1rem 1.1rem;margin-top:1rem}
+  .audit-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:.75rem}
+  .audit-select{padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);font-family:var(--mono);font-size:11px;color:var(--text2)}
+  .btn-mini{padding:8px 10px;background:transparent;border:1px solid var(--border2);border-radius:var(--radius);font-family:var(--mono);font-size:11px;color:var(--text2);cursor:pointer}
+  .btn-mini:hover{border-color:var(--accent);color:var(--accent)}
+  .audit-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.75rem}
+  .audit-card{border:1px solid var(--border);border-radius:var(--radius);padding:10px;background:var(--bg3)}
+  .audit-k{font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+  .audit-v{font-size:20px;font-weight:600;color:var(--text);line-height:1.3;margin-top:3px}
+  .audit-table-wrap{max-height:220px;overflow:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg2)}
+  .audit-table{width:100%;border-collapse:collapse;font-size:12px}
+  .audit-table th,.audit-table td{padding:8px 9px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+  .audit-table th{position:sticky;top:0;background:var(--bg3);font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--text3);text-transform:uppercase}
+  .audit-empty{padding:12px;font-family:var(--mono);font-size:11px;color:var(--text3)}
+  .mono{font-family:var(--mono)}
   .api-status{display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:1rem}
   .dot{width:7px;height:7px;border-radius:50%}
   .dot.online{background:var(--green)}
@@ -125,6 +140,9 @@
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
   .spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-left:6px}
   @keyframes spin{to{transform:rotate(360deg)}}
+  @media (max-width:560px){
+    .audit-grid{grid-template-columns:1fr}
+  }
 </style>
 </head>
 <body>
@@ -208,6 +226,41 @@
     <div class="log-list" id="event-log">
       <div class="log-empty">// no actions recorded</div>
     </div>
+
+    <div id="audit-panel" class="audit-panel" style="display:none">
+      <div class="section-title">auditor console</div>
+      <div class="audit-toolbar">
+        <button class="btn-mini" onclick="refreshAuditData()">refresh</button>
+        <select id="audit-user-filter" class="audit-select" onchange="onAuditFilterChange()">
+          <option value="">all users</option>
+        </select>
+      </div>
+      <div class="audit-grid">
+        <div class="audit-card">
+          <div class="audit-k">total violations</div>
+          <div class="audit-v" id="audit-total-violations">-</div>
+        </div>
+        <div class="audit-card">
+          <div class="audit-k">registered users</div>
+          <div class="audit-v" id="audit-total-users">-</div>
+        </div>
+      </div>
+      <div class="section-title" style="margin-top:.25rem">violations</div>
+      <div class="audit-table-wrap">
+        <div id="audit-violations-empty" class="audit-empty">// loading...</div>
+        <table class="audit-table" id="audit-violations-table" style="display:none">
+          <thead>
+            <tr>
+              <th>user</th>
+              <th>action</th>
+              <th>timestamp</th>
+              <th>reported by</th>
+            </tr>
+          </thead>
+          <tbody id="audit-violations-body"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -229,6 +282,8 @@
   let currentUser   = null;
   let currentToken  = null;
   let eventLog      = [];
+  let auditUsers    = [];
+  let auditViols    = [];
 
   // ── API health check ──────────────────────────────────────────────────────
   async function checkAPI(){
@@ -364,7 +419,112 @@
     document.getElementById('dash-name').textContent =currentUser.name;
     document.getElementById('dash-email').textContent=currentUser.email;
     document.getElementById('auditor-pill').style.display=currentUser.is_auditor?'inline-flex':'none';
+    document.getElementById('audit-panel').style.display=currentUser.is_auditor?'block':'none';
     renderJWT();renderActions();renderLog();
+    if(currentUser.is_auditor) refreshAuditData();
+  }
+
+  function authHeaders(){
+    return {'Authorization':'Bearer '+currentToken};
+  }
+
+  async function refreshAuditData(){
+    if(!currentUser?.is_auditor) return;
+    await Promise.all([loadAuditUsers(), loadAuditCount(), loadAuditViolations()]);
+  }
+
+  async function loadAuditUsers(){
+    try{
+      const r = await fetch(`${API}/users`, {headers: authHeaders()});
+      if(!r.ok) throw new Error('users endpoint denied');
+      const d = await r.json();
+      auditUsers = d.users || [];
+      document.getElementById('audit-total-users').textContent = String(auditUsers.length);
+      renderAuditFilter();
+    } catch {
+      auditUsers = [];
+      document.getElementById('audit-total-users').textContent = '0';
+      renderAuditFilter();
+    }
+  }
+
+  async function loadAuditCount(){
+    try{
+      const r = await fetch(`${API}/violations/count`, {headers: authHeaders()});
+      if(!r.ok) throw new Error('count endpoint denied');
+      const d = await r.json();
+      document.getElementById('audit-total-violations').textContent = String(d.total ?? 0);
+    } catch {
+      document.getElementById('audit-total-violations').textContent = '0';
+    }
+  }
+
+  async function loadAuditViolations(userId=''){
+    try{
+      const url = userId ? `${API}/violations/${encodeURIComponent(userId)}` : `${API}/violations`;
+      const r = await fetch(url, {headers: authHeaders()});
+      if(!r.ok) throw new Error('violations endpoint denied');
+      const d = await r.json();
+      auditViols = d.violations || [];
+      renderAuditViolations();
+    } catch {
+      auditViols = [];
+      renderAuditViolations('Falha ao carregar violações (apenas auditor).');
+    }
+  }
+
+  function renderAuditFilter(){
+    const sel = document.getElementById('audit-user-filter');
+    const current = sel.value;
+    const options = ['<option value="">all users</option>']
+      .concat(auditUsers.map(u=>`<option value="${u.id}">${u.name} · ${u.email}</option>`));
+    sel.innerHTML = options.join('');
+    if([...sel.options].some(o=>o.value===current)) sel.value = current;
+  }
+
+  function onAuditFilterChange(){
+    const userId = document.getElementById('audit-user-filter').value;
+    loadAuditViolations(userId);
+  }
+
+  function formatTs(ts){
+    if(!ts) return '-';
+    const ms = Number(ts) * 1000;
+    const d = new Date(ms);
+    return Number.isNaN(d.getTime()) ? String(ts) : d.toLocaleString('pt-BR');
+  }
+
+  function shortAddress(addr){
+    if(!addr || addr.length < 12) return addr || '-';
+    return `${addr.slice(0,8)}...${addr.slice(-6)}`;
+  }
+
+  function renderAuditViolations(errorMsg=''){
+    const empty = document.getElementById('audit-violations-empty');
+    const table = document.getElementById('audit-violations-table');
+    const body = document.getElementById('audit-violations-body');
+    if(errorMsg){
+      table.style.display='none';
+      empty.style.display='block';
+      empty.textContent='// '+errorMsg;
+      return;
+    }
+    if(!auditViols.length){
+      table.style.display='none';
+      empty.style.display='block';
+      empty.textContent='// no violations found';
+      return;
+    }
+    body.innerHTML = auditViols.map(v=>`
+      <tr>
+        <td><div>${v.userName||'-'}</div><div class="mono" style="font-size:10px;color:var(--text3)">id: ${v.userId||'-'}</div></td>
+        <td class="mono">${v.action||'-'}</td>
+        <td>${formatTs(v.timestamp)}</td>
+        <td class="mono">${shortAddress(v.reportedBy)}</td>
+      </tr>
+    `).join('');
+    empty.style.display='none';
+    table.style.display='table';
   }
 
   // ── JWT ───────────────────────────────────────────────────────────────────
@@ -422,6 +582,7 @@
       entry.error='Falha na API';
     }
     renderLog();
+    if(currentUser?.is_auditor) refreshAuditData();
   }
 
   // ── Log ───────────────────────────────────────────────────────────────────

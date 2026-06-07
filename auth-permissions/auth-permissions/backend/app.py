@@ -1,5 +1,8 @@
 import os
 import logging
+import json
+import time
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,6 +13,7 @@ from flask_cors import CORS
 from models import init_db, create_user, get_user_by_email, get_all_users, hash_password, VALID_PERMISSIONS
 from auth import generate_token, require_auth, require_auditor
 from blockchain import blockchain
+from metrics import metrics
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(name)s  %(message)s")
 logger = logging.getLogger(__name__)
@@ -109,7 +113,32 @@ def record_violation():
     logger.warning(f"VIOLAÇÃO: {user_name} (id={user_id}) tentou '{action}' | perms: {token_perms}")
 
     # Grava na blockchain
+    started = time.perf_counter()
     result = blockchain.record_violation(user_id, user_name, action, token_perms)
+    elapsed_ms = (time.perf_counter() - started) * 1000.0
+
+    event = {
+        "event_type": "violation_attempt",
+        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "user_id": str(user_id),
+        "user_name": user_name,
+        "action": action,
+        "permissions_in_token": token_perms,
+        "detected_violation": True,
+        "processing_ms": round(elapsed_ms, 3),
+        "blockchain_confirmed": bool(result.get("ok")),
+        "http_status": 201 if result.get("ok") else 202,
+        "tx_hash": result.get("tx_hash"),
+        "block_number": result.get("block_number"),
+        "gas_used": result.get("gas_used"),
+        "gas_price_wei": result.get("gas_price_wei"),
+        "estimated_cost_wei": result.get("estimated_cost_wei"),
+        "estimated_cost_matic": result.get("estimated_cost_matic"),
+        "logical_payload_bytes": result.get("logical_payload_bytes"),
+        "tx_input_size_bytes": result.get("tx_input_size_bytes"),
+        "error": result.get("error"),
+    }
+    metrics.record_violation_event(event)
 
     if result["ok"]:
         return jsonify({
@@ -117,6 +146,11 @@ def record_violation():
             "tx_hash":      result["tx_hash"],
             "block_number": result["block_number"],
             "gas_used":     result["gas_used"],
+            "gas_price_wei": result.get("gas_price_wei"),
+            "estimated_cost_matic": result.get("estimated_cost_matic"),
+            "logical_payload_bytes": result.get("logical_payload_bytes"),
+            "tx_input_size_bytes": result.get("tx_input_size_bytes"),
+            "processing_ms": round(elapsed_ms, 3),
         }), 201
     else:
         # Blockchain fora do ar ou não configurada — retorna aviso mas não falha o front
@@ -124,6 +158,7 @@ def record_violation():
             "message": "Violação detectada (blockchain indisponível — apenas logada localmente)",
             "error":   result.get("error"),
             "tx_hash": None,
+            "processing_ms": round(elapsed_ms, 3),
         }), 202
 
 
@@ -171,6 +206,38 @@ def health():
         "status":     "ok",
         "blockchain": blockchain.is_connected,
     })
+
+
+@app.get("/api/metrics/summary")
+@require_auditor
+def metrics_summary():
+    """Resumo agregado de métricas de violações para análise experimental."""
+    summary = metrics.summary()
+    summary["valid_permission_actions"] = sorted(list(VALID_PERMISSIONS))
+    summary["registered_users_count"] = len(get_all_users())
+    return jsonify(summary)
+
+
+@app.get("/api/metrics/events")
+@require_auditor
+def metrics_events():
+    """Retorna os eventos coletados no arquivo JSONL para exportação."""
+    events_file = metrics.events_file
+    if not os.path.exists(events_file):
+        return jsonify({"events": [], "total": 0})
+
+    events = []
+    with open(events_file, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                events.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+
+    return jsonify({"events": events, "total": len(events), "source": events_file})
 
 
 # ════════════════════════════════════════════════════════════

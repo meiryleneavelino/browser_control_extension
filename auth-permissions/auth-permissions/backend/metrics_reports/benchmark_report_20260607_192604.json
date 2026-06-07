@@ -1,0 +1,88 @@
+{
+  "executed_at_utc": "2026-06-07T22:26:04.398104+00:00",
+  "environment": {
+    "api_base": "http://127.0.0.1:5000/api",
+    "blockchain_connected": true,
+    "actions_catalog": [
+      "read",
+      "write",
+      "update",
+      "delete",
+      "export",
+      "admin"
+    ],
+    "users_in_experiment": 3,
+    "rounds_per_user": 5,
+    "random_seed": 42
+  },
+  "benchmark_summary": {
+    "total_attempts": 15,
+    "authorized_attempts": 3,
+    "unauthorized_attempts": 12,
+    "detected_violations": 12,
+    "detection_rate": 1.0,
+    "onchain_success_rate": 1.0,
+    "api_roundtrip_ms": {
+      "avg": 48.235,
+      "min": 26.539,
+      "max": 61.984
+    },
+    "backend_processing_ms": {
+      "avg": 37.248,
+      "min": 23.196,
+      "max": 44.882
+    },
+    "gas_used": {
+      "avg": 169925,
+      "min": 169851,
+      "max": 170007
+    },
+    "estimated_cost_matic": {
+      "avg": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "estimated_cost_usd": {
+      "avg": null,
+      "min": null,
+      "max": null
+    },
+    "logical_payload_bytes": {
+      "avg": 36.167,
+      "min": 30,
+      "max": 43
+    },
+    "tx_input_size_bytes": {
+      "avg": 388,
+      "min": 388,
+      "max": 388
+    }
+  },
+  "backend_runtime_summary": {
+    "blockchain_confirmed": 41,
+    "blockchain_not_confirmed": 0,
+    "detected_violations": 41,
+    "detection_rate": 1.0,
+    "estimated_cost_matic_avg": 0.00017048,
+    "events_file": "C:\\Users\\Valadares\\Documents\\TCC\\Blockchain\\browser_control_extension\\auth-permissions\\auth-permissions\\backend\\metrics_data\\violation_events.jsonl",
+    "events_total": 41,
+    "gas_used_avg": 169932.66,
+    "gas_used_max": 170019,
+    "gas_used_min": 169851,
+    "logical_payload_bytes_avg": 36.8,
+    "processing_ms_avg": 33.915,
+    "processing_ms_max": 53.775,
+    "processing_ms_min": 20.212,
+    "registered_users_count": 9,
+    "simulated_unauthorized_attempts": 41,
+    "tx_input_size_bytes_avg": 388,
+    "valid_permission_actions": [
+      "admin",
+      "delete",
+      "export",
+      "read",
+      "update",
+      "write"
+    ]
+  }
+}

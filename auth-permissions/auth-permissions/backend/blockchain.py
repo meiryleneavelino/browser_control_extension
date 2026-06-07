@@ -77,6 +77,8 @@ class BlockchainService:
         if not self._connected:
             return {"ok": False, "error": "Blockchain não configurada", "tx_hash": None}
         try:
+            payload_string = f"{user_id}|{user_name}|{action}|{','.join(permissions_in_token)}"
+            logical_payload_bytes = len(payload_string.encode("utf-8"))
             nonce = self.w3.eth.get_transaction_count(
                 Web3.to_checksum_address(self.wallet_address)
             )
@@ -92,14 +94,25 @@ class BlockchainService:
                 "gas":      200_000,
                 "gasPrice": self.w3.eth.gas_price,
             })
+            tx_data = tx.get("data", "")
+            tx_input_size_bytes = max((len(tx_data) - 2) // 2, 0) if isinstance(tx_data, str) and tx_data.startswith("0x") else None
             signed = self.w3.eth.account.sign_transaction(tx, private_key=self.private_key)
             tx_hash = self.w3.eth.send_raw_transaction(signed.raw_transaction)
             receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
+            effective_gas_price = receipt.get("effectiveGasPrice") if isinstance(receipt, dict) else getattr(receipt, "effectiveGasPrice", None)
+            gas_price_wei = int(effective_gas_price or tx.get("gasPrice") or self.w3.eth.gas_price)
+            estimated_cost_wei = int(receipt.gasUsed) * gas_price_wei
+            estimated_cost_matic = float(self.w3.from_wei(estimated_cost_wei, "ether"))
             return {
                 "ok":           True,
                 "tx_hash":      tx_hash.hex(),
                 "block_number": receipt.blockNumber,
                 "gas_used":     receipt.gasUsed,
+                "gas_price_wei": gas_price_wei,
+                "estimated_cost_wei": estimated_cost_wei,
+                "estimated_cost_matic": estimated_cost_matic,
+                "logical_payload_bytes": logical_payload_bytes,
+                "tx_input_size_bytes": tx_input_size_bytes,
             }
         except Exception as e:
             logger.error(f"Erro ao gravar violação na blockchain: {e}")

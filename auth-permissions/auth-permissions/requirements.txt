@@ -1,5 +1,5 @@
 flask==3.0.3
 flask-cors==4.0.1
 pyjwt==2.8.0
-web3==6.20.1
+web3==7.16.0
 python-dotenv==1.0.1

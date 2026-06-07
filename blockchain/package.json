@@ -1,0 +1,20 @@
+{
+  "name": "browser-control-blockchain",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Hardhat project for violation logging contract",
+  "scripts": {
+    "test": "hardhat test",
+    "node": "hardhat node",
+    "deploy:local": "hardhat run scripts/deploy.ts --network localhost"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^25.9.2",
+    "chai": "^4.5.0",
+    "hardhat": "^2.28.6",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.0.4"
+  }
+}

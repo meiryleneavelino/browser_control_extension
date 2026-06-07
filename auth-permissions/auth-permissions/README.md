@@ -1,6 +1,6 @@
 # auth-permissions
 
-MVP de controle de acesso com registro de violações na blockchain (Polygon Amoy Testnet).
+MVP de controle de acesso com registro de violações na blockchain usando Hardhat local.
 
 ---
 
@@ -8,16 +8,18 @@ MVP de controle de acesso com registro de violações na blockchain (Polygon Amo
 
 ```
 auth-permissions/
+├── ../../blockchain/
+│   ├── contracts/ViolationLogger.sol
+│   ├── scripts/deploy.ts
+│   ├── hardhat.config.ts
+│   └── package.json
 ├── backend/
 │   ├── app.py            # Flask — rotas principais
 │   ├── models.py         # SQLite — usuários
 │   ├── auth.py           # JWT — geração e decorators
-│   ├── blockchain.py     # web3.py — integração Polygon
-│   ├── deploy.py         # script de deploy do contrato
+│   ├── blockchain.py     # web3.py — integração com contrato Hardhat
 │   ├── requirements.txt
 │   └── .env.example
-├── contracts/
-│   └── ViolationLogger.sol   # Smart contract Solidity
 └── frontend/
     └── index.html            # Interface completa
 ```
@@ -31,19 +33,50 @@ cd backend
 
 # Criar ambiente virtual
 python -m venv venv
-source venv/bin/activate        # Linux/Mac
-# ou: venv\Scripts\activate     # Windows
+
+# Ativar ambiente virtual (Linux/Mac)
+source venv/bin/activate
+
+# Ativar ambiente virtual (Windows PowerShell)
+.\venv\Scripts\Activate.ps1
 
 # Instalar dependências
 pip install -r requirements.txt
 
 # Copiar e editar o .env
+# Linux/Mac
 cp .env.example .env
+
+# Windows PowerShell
+Copy-Item .env.example .env
 ```
 
 ---
 
-## 2. Configurar o .env
+## 2. Subir blockchain local (Hardhat)
+
+```bash
+cd ../../blockchain
+npm install
+npx hardhat node
+```
+
+Em outro terminal:
+
+```bash
+cd ../../blockchain
+npx hardhat run scripts/deploy.ts --network localhost
+```
+
+Copie o endereço exibido e configure no `.env` do backend:
+
+```
+CONTRACT_ADDRESS=0x...
+```
+
+---
+
+## 3. Configurar o .env
 
 Edite o arquivo `backend/.env`:
 
@@ -52,35 +85,15 @@ Edite o arquivo `backend/.env`:
 JWT_SECRET=coloque_uma_string_longa_e_secreta_aqui
 ```
 
-### Polygon Amoy Testnet
+### Blockchain local (Hardhat)
 
-**Passo 1 — RPC gratuita:**
-- Acesse https://www.alchemy.com → crie uma conta → New App → Polygon Amoy
-- Copie a URL HTTPS e cole em `POLYGON_RPC_URL`
+Use os valores padrão do Hardhat para desenvolvimento:
 
-**Passo 2 — Carteira:**
-- Instale MetaMask (https://metamask.io)
-- Crie uma carteira nova (use exclusivamente para este projeto)
-- Exporte a Private Key: MetaMask → ... → Account Details → Export Private Key
-- Cole em `WALLET_PRIVATE_KEY` e o endereço em `WALLET_ADDRESS`
-
-**Passo 3 — MATIC de teste (gratuito):**
-- Acesse https://faucet.polygon.technology
-- Conecte a carteira → selecione Amoy → solicite MATIC
-- Aguarde ~1 min para receber
-
----
-
-## 3. Deploy do contrato
-
-```bash
-cd backend
-python deploy.py
 ```
-
-Copie o endereço exibido e coloque no `.env`:
-```
-CONTRACT_ADDRESS=0x...
+BLOCKCHAIN_RPC_URL=http://127.0.0.1:8545
+WALLET_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+WALLET_ADDRESS=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+CONTRACT_ADDRESS=0x...   # endereço retornado no deploy
 ```
 
 ---
@@ -131,15 +144,6 @@ O frontend se conecta automaticamente em `http://localhost:5000`.
   "iat": 1700000000,
   "exp": 1700028800
 }
-```
-
----
-
-## Visualizar transações
-
-Após gravar uma violação, acesse:
-```
-https://amoy.polygonscan.com/tx/<tx_hash>
 ```
 
 ---

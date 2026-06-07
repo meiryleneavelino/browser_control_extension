@@ -134,49 +134,49 @@
     <div class="logo-box">🔐</div>
     <div>
       <div class="app-title">auth_permissions</div>
-      <div class="app-sub">flask · jwt · polygon amoy</div>
+      <div class="app-sub">flask · jwt · hardhat local</div>
     </div>
   </div>
 
   <!-- API Status -->
   <div class="api-status">
     <div class="dot checking" id="api-dot"></div>
-    <span id="api-label">verificando conexão com a API...</span>
+    <span id="api-label">checking API connection...</span>
   </div>
 
   <!-- AUTH -->
   <div id="screen-auth">
     <div class="card">
       <div class="tabs">
-        <button class="tab active" onclick="switchTab('login')">entrar</button>
-        <button class="tab" onclick="switchTab('register')">cadastrar usuário</button>
+        <button class="tab active" onclick="switchTab('login')">sign in</button>
+        <button class="tab" onclick="switchTab('register')">register user</button>
       </div>
 
       <div id="tab-login" class="form-body">
         <div id="login-alert" class="alert"></div>
-        <div class="field"><label>e-mail</label><input id="login-email" type="email" placeholder="seu@email.com"/></div>
-        <div class="field"><label>senha</label><input id="login-pass" type="password" placeholder="••••••••"/></div>
-        <button class="btn-primary" id="btn-login" onclick="doLogin()">→ entrar</button>
+        <div class="field"><label>e-mail</label><input id="login-email" type="email" placeholder="your@email.com"/></div>
+        <div class="field"><label>password</label><input id="login-pass" type="password" placeholder="••••••••"/></div>
+        <button class="btn-primary" id="btn-login" onclick="doLogin()">→ sign in</button>
         <div class="sep"></div>
-        <div class="users-hint"># usuários cadastrados:</div>
+        <div class="users-hint"># registered users:</div>
         <div class="users-list" id="users-preview"></div>
       </div>
 
       <div id="tab-register" class="form-body" style="display:none">
         <div id="reg-alert" class="alert"></div>
-        <div class="field"><label>nome completo</label><input id="reg-name" type="text" placeholder="João da Silva"/></div>
-        <div class="field"><label>e-mail</label><input id="reg-email" type="email" placeholder="joao@email.com"/></div>
-        <div class="field"><label>senha</label><input id="reg-pass" type="password" placeholder="mínimo 6 caracteres"/></div>
-        <span class="perm-label"># selecione as permissões</span>
+        <div class="field"><label>full name</label><input id="reg-name" type="text" placeholder="John Doe"/></div>
+        <div class="field"><label>e-mail</label><input id="reg-email" type="email" placeholder="john@email.com"/></div>
+        <div class="field"><label>password</label><input id="reg-pass" type="password" placeholder="minimum 6 characters"/></div>
+        <span class="perm-label"># select permissions</span>
         <div class="perm-grid" id="perm-grid"></div>
         <div class="auditor-row" id="auditor-row" onclick="toggleAuditor()">
           <div class="auditor-check" id="auditor-check"></div>
           <div>
             <div style="font-size:13px;font-weight:500">Auditor</div>
-            <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">pode consultar violações na blockchain</div>
+            <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">can query violations on blockchain</div>
           </div>
         </div>
-        <button class="btn-primary" id="btn-register" onclick="doRegister()">+ cadastrar usuário</button>
+        <button class="btn-primary" id="btn-register" onclick="doRegister()">+ register user</button>
       </div>
     </div>
   </div>
@@ -193,20 +193,20 @@
       </div>
       <div class="dash-meta">
         <span class="pill-auditor" id="auditor-pill" style="display:none">auditor</span>
-        <button class="btn-logout" onclick="doLogout()">← sair</button>
+        <button class="btn-logout" onclick="doLogout()">← sign out</button>
       </div>
     </div>
 
     <button class="jwt-toggle-btn" onclick="toggleJWT()">🔑 JWT token</button>
     <div class="jwt-box" id="jwt-box"></div>
 
-    <div class="section-title">ações disponíveis</div>
+    <div class="section-title">available actions</div>
     <div class="action-grid" id="action-grid"></div>
 
     <div class="sep"></div>
-    <div class="section-title">log de eventos</div>
+    <div class="section-title">event log</div>
     <div class="log-list" id="event-log">
-      <div class="log-empty">// nenhuma ação registrada</div>
+      <div class="log-empty">// no actions recorded</div>
     </div>
   </div>
 
@@ -216,12 +216,12 @@
   const API = 'http://localhost:5000/api';
 
   const PERMS = [
-    {id:'read',   label:'Read',   icon:'👁', desc:'visualizar dados'},
-    {id:'write',  label:'Write',  icon:'✏️', desc:'criar registros'},
-    {id:'update', label:'Update', icon:'🔄', desc:'editar registros'},
-    {id:'delete', label:'Delete', icon:'🗑', desc:'remover dados'},
-    {id:'export', label:'Export', icon:'📤', desc:'exportar arquivos'},
-    {id:'admin',  label:'Admin',  icon:'⚙️', desc:'painel admin'},
+    {id:'read',   label:'Read',   icon:'👁', desc:'view data'},
+    {id:'write',  label:'Write',  icon:'✏️', desc:'create records'},
+    {id:'update', label:'Update', icon:'🔄', desc:'edit records'},
+    {id:'delete', label:'Delete', icon:'🗑', desc:'remove data'},
+    {id:'export', label:'Export', icon:'📤', desc:'export files'},
+    {id:'admin',  label:'Admin',  icon:'⚙️', desc:'admin panel'},
   ];
 
   let selectedPerms = [];
@@ -237,11 +237,11 @@
       const d = await r.json();
       document.getElementById('api-dot').className   = 'dot online';
       document.getElementById('api-label').textContent =
-        `API online ${d.blockchain ? '· blockchain conectada ⛓' : '· blockchain não configurada'}`;
+        `API online ${d.blockchain ? '· blockchain connected ⛓' : '· blockchain not configured'}`;
       loadUsers();
     } catch {
       document.getElementById('api-dot').className   = 'dot offline';
-      document.getElementById('api-label').textContent = 'API offline — inicie: python app.py';
+      document.getElementById('api-label').textContent = 'API offline - start with: python app.py';
     }
   }
 
@@ -292,7 +292,7 @@
   function initials(n){return n.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();}
   function renderUsersPreview(users){
     const c=document.getElementById('users-preview');
-    if(!users||!users.length){c.innerHTML='<div style="font-size:12px;color:var(--text3);font-family:var(--mono)">// nenhum usuário ainda</div>';return;}
+    if(!users||!users.length){c.innerHTML='<div style="font-size:12px;color:var(--text3);font-family:var(--mono)">// no users yet</div>';return;}
     c.innerHTML=users.map((u,i)=>`
       <div class="user-row">
         <div class="uavatar ${colors[i%4]}">${initials(u.name)}</div>
@@ -311,8 +311,8 @@
     const alrt =document.getElementById('login-alert');
     const btn  =document.getElementById('btn-login');
     alrt.className='alert';
-    if(!email||!pass){alrt.className='alert error';alrt.textContent='⚠ preencha todos os campos.';return;}
-    btn.disabled=true; btn.innerHTML='entrando<span class="spinner"></span>';
+    if(!email||!pass){alrt.className='alert error';alrt.textContent='⚠ fill in all fields.';return;}
+    btn.disabled=true; btn.innerHTML='signing in<span class="spinner"></span>';
     try{
       const r=await fetch(`${API}/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass})});
       const d=await r.json();
@@ -320,8 +320,8 @@
       currentToken=d.token; currentUser=d.user; eventLog=[];
       showDashboard();
     } catch {
-      alrt.className='alert error';alrt.textContent='⚠ Erro ao conectar na API. Verifique se o Flask está rodando.';
-    } finally {btn.disabled=false;btn.innerHTML='→ entrar';}
+      alrt.className='alert error';alrt.textContent='⚠ API connection error. Check if Flask is running.';
+    } finally {btn.disabled=false;btn.innerHTML='→ sign in';}
   }
 
   // ── Register ──────────────────────────────────────────────────────────────
@@ -332,16 +332,16 @@
     const alrt =document.getElementById('reg-alert');
     const btn  =document.getElementById('btn-register');
     alrt.className='alert';
-    if(!name||!email||!pass){alrt.className='alert error';alrt.textContent='⚠ preencha todos os campos.';return;}
-    if(pass.length<6){alrt.className='alert error';alrt.textContent='⚠ senha com mínimo 6 caracteres.';return;}
-    if(!selectedPerms.length){alrt.className='alert error';alrt.textContent='⚠ selecione ao menos uma permissão.';return;}
-    btn.disabled=true;btn.innerHTML='cadastrando<span class="spinner"></span>';
+    if(!name||!email||!pass){alrt.className='alert error';alrt.textContent='⚠ fill in all fields.';return;}
+    if(pass.length<6){alrt.className='alert error';alrt.textContent='⚠ password must be at least 6 characters.';return;}
+    if(!selectedPerms.length){alrt.className='alert error';alrt.textContent='⚠ select at least one permission.';return;}
+    btn.disabled=true;btn.innerHTML='registering<span class="spinner"></span>';
     try{
       const r=await fetch(`${API}/auth/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password:pass,permissions:selectedPerms,is_auditor:isAuditor})});
       const d=await r.json();
       if(!r.ok){alrt.className='alert error';alrt.textContent='⚠ '+d.error;return;}
       alrt.className='alert success';
-      alrt.textContent=`✓ "${name}" cadastrado! Perms: ${selectedPerms.join(', ')}${isAuditor?' | auditor':''}`;
+      alrt.textContent=`✓ "${name}" registered! Perms: ${selectedPerms.join(', ')}${isAuditor?' | auditor':''}`;
       document.getElementById('reg-name').value='';
       document.getElementById('reg-email').value='';
       document.getElementById('reg-pass').value='';
@@ -349,8 +349,8 @@
       renderPermGrid();
       setTimeout(()=>switchTab('login'),1800);
     } catch {
-      alrt.className='alert error';alrt.textContent='⚠ Erro ao conectar na API.';
-    } finally {btn.disabled=false;btn.innerHTML='+ cadastrar usuário';}
+      alrt.className='alert error';alrt.textContent='⚠ API connection error.';
+    } finally {btn.disabled=false;btn.innerHTML='+ register user';}
   }
 
   // ── Dashboard ─────────────────────────────────────────────────────────────
@@ -403,7 +403,8 @@
       renderLog(); return;
     }
     // Ação negada — envia para o Flask → blockchain
-    const idx=eventLog.unshift({permId,permLabel,allowed:false,ts,txHash:null,sending:true})-1;
+    const entry={permId,permLabel,allowed:false,ts,txHash:null,sending:true,blockNumber:null,error:null};
+    eventLog.unshift(entry);
     renderLog();
     try{
       const r=await fetch(`${API}/violation`,{
@@ -412,12 +413,13 @@
         body:JSON.stringify({action:permId})
       });
       const d=await r.json();
-      eventLog[0].sending=false;
-      eventLog[0].txHash=d.tx_hash||null;
-      eventLog[0].blockNumber=d.block_number||null;
+      entry.sending=false;
+      entry.txHash=d.tx_hash||null;
+      entry.blockNumber=d.block_number||null;
+      if(!r.ok) entry.error=d.error||'Falha ao registrar violação';
     } catch {
-      eventLog[0].sending=false;
-      eventLog[0].error='Falha na API';
+      entry.sending=false;
+      entry.error='Falha na API';
     }
     renderLog();
   }
@@ -425,21 +427,21 @@
   // ── Log ───────────────────────────────────────────────────────────────────
   function renderLog(){
     const c=document.getElementById('event-log');
-    if(!eventLog.length){c.innerHTML='<div class="log-empty">// nenhuma ação registrada</div>';return;}
+    if(!eventLog.length){c.innerHTML='<div class="log-empty">// no actions recorded</div>';return;}
     c.innerHTML=eventLog.map(e=>`
       <div class="log-item ${e.allowed?'ok':'nok'}">
         <span class="log-icon">${e.allowed?'✓':e.sending?'⏳':'✕'}</span>
         <div class="log-body">
           <span style="font-weight:600">${currentUser.name}</span>
-          ${e.allowed?'executou':'tentou executar'}
+          ${e.allowed?'executed':'tried to execute'}
           <span class="log-action"> ${e.permLabel}</span>
           ${e.allowed
-            ?'<span style="color:var(--green);font-size:12px"> — autorizado</span>'
+            ?'<span style="color:var(--green);font-size:12px"> - authorized (local)</span>'
             :e.sending
-              ?'<br><span class="chain-pill">⛓ enviando para blockchain...</span>'
+              ?'<br><span class="chain-pill">🚫 non-permitted action · sending to blockchain...</span>'
               :e.txHash
-                ?`<br><span class="chain-pill confirmed">⛓ gravado · bloco ${e.blockNumber}</span><br><span style="font-family:var(--mono);font-size:10px;color:var(--text3)">tx: ${e.txHash.slice(0,20)}...</span>`
-                :`<br><span class="chain-pill">⛓ ${e.error||'blockchain não configurada'}</span>`
+                ?`<br><span class="chain-pill confirmed">⛓ non-permitted action registered on blockchain · block ${e.blockNumber}</span><br><span style="font-family:var(--mono);font-size:10px;color:var(--text3)">tx: ${e.txHash}</span>`
+                :`<br><span class="chain-pill">🚫 non-permitted action · ${e.error||'blockchain not configured'}</span>`
           }
         </div>
         <span class="log-time">${e.ts}</span>
